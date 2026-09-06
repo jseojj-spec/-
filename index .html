@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>발랜뽑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1923;
+    --bg-2:#141F29;
+    --panel:#1B2731;
+    --line:#2B3944;
+    --ink:#ECE8E1;
+    --ink-dim:#8A97A0;
+    --red:#FF4655;      /* 타격 */
+    --gold:#F2C64C;     /* 척후 */
+    --violet:#9B7BFF;   /* 연막 */
+    --teal:#3ED9C5;     /* 감시 */
+    --all:#ECE8E1;      /* 모든요원 */
+    --steel:#6E9BC7;    /* 일반전 맵 */
+    --ember:#FF8A3D;    /* 경쟁전 맵 */
+    --vp:#4ADE80;        /* 상점 예상 */
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 55%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 64px);
+    color:var(--ink);
+    font-family:'Noto Sans KR', sans-serif;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 60px;
+  }
+  .app{width:100%;max-width:560px;}
+
+  header{margin-bottom:28px;}
+  .eyebrow-line{
+    display:flex;align-items:center;gap:10px;margin-bottom:6px;
+  }
+  .eyebrow-line .dash{width:26px;height:3px;background:var(--red);clip-path:polygon(10% 0,100% 0,90% 100%,0 100%);}
+  .eyebrow-line span{font-size:13px;color:var(--ink-dim);letter-spacing:0.02em;}
+  h1{
+    font-family:'Black Han Sans', 'Noto Sans KR', sans-serif;
+    font-size:40px;
+    line-height:1.05;
+    margin:0 0 8px;
+    letter-spacing:0.01em;
+  }
+  header p{margin:0;color:var(--ink-dim);font-size:14.5px;line-height:1.6;}
+
+  .section-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink-dim);
+    display:flex;align-items:center;gap:8px;
+    margin:0 0 10px;
+  }
+  .section-label .dash{width:16px;height:2px;background:var(--line);}
+
+  .roles{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:26px;
+  }
+  .maps{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .role-btn.mapun{border-left-color:var(--steel);}
+  .role-btn.mapcomp{border-left-color:var(--ember);}
+  .role-btn.shop{grid-column:span 3;border-left-color:var(--vp);}
+  .role-btn.shop:disabled{opacity:.5;cursor:default;transform:none;}
+  .role-btn{
+    position:relative;
+    border:none;
+    cursor:pointer;
+    padding:16px 10px 14px;
+    background:var(--panel);
+    color:var(--ink);
+    font-family:'Noto Sans KR', sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    clip-path:polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    border-left:3px solid var(--line);
+    transition:transform .12s ease, border-color .12s ease, background .12s ease;
+    text-align:left;
+  }
+  .role-btn .r-label{display:block;font-size:11px;color:var(--ink-dim);font-weight:500;margin-bottom:4px;}
+  .role-btn:hover{transform:translateY(-2px);}
+  .role-btn:active{transform:translateY(0);}
+  .role-btn.all{grid-column:span 3;border-left-color:var(--all);}
+  .role-btn.initiator{border-left-color:var(--gold);}
+  .role-btn.duelist{border-left-color:var(--red);}
+  .role-btn.sentinel{border-left-color:var(--teal);}
+  .role-btn.controller{border-left-color:var(--violet);}
+
+  .stage{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+    padding:30px 24px 30px;
+    min-height:260px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    overflow:hidden;
+  }
+  .stage-empty{color:var(--ink-dim);font-size:14px;}
+  .stage-empty b{color:var(--ink);font-family:'Black Han Sans';font-weight:400;font-size:16px;display:block;margin-bottom:6px;}
+
+  .card{display:none;width:100%;animation:reveal .38s cubic-bezier(.2,.8,.3,1);}
+  .card.show{display:block;}
+  @keyframes reveal{
+    0%{opacity:0; transform:translateY(14px) scale(.97);}
+    100%{opacity:1; transform:translateY(0) scale(1);}
+  }
+  .card .card-img{
+    width:100%;
+    max-width:340px;
+    max-height:190px;
+    object-fit:contain;
+    margin:0 auto 14px;
+    display:block;
+    filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));
+  }
+  .card .tag{
+    display:inline-block;
+    font-size:12px;
+    font-weight:700;
+    padding:5px 12px 4px;
+    color:#0F1923;
+    clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+    margin-bottom:16px;
+  }
+  .card .name{
+    font-family:'Black Han Sans', sans-serif;
+    font-size:44px;
+    line-height:1.1;
+    margin:0 0 6px;
+  }
+  .card .role-name{color:var(--ink-dim);font-size:14px;}
+
+  .shop-stage{
+    background:var(--panel);
+    border:1px solid var(--line);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+    padding:22px;
+    min-height:160px;
+    margin-bottom:22px;
+  }
+  .shop-empty{
+    color:var(--ink-dim);
+    font-size:14px;
+    text-align:center;
+    padding:36px 10px;
+  }
+  .shop-empty b{color:var(--ink);font-family:'Black Han Sans';font-weight:400;font-size:16px;display:block;margin-bottom:6px;}
+  .shop-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .shop-card{
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-top:3px solid var(--vp);
+    padding:14px 10px 12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    animation:reveal .38s cubic-bezier(.2,.8,.3,1);
+  }
+  .shop-card .tier{
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--vp);
+    letter-spacing:.04em;
+    margin-bottom:8px;
+  }
+  .shop-card img{
+    width:100%;
+    height:64px;
+    object-fit:contain;
+    margin-bottom:10px;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));
+  }
+  .shop-card .skin-name{
+    font-size:13px;
+    font-weight:700;
+    line-height:1.35;
+  }
+  .shop-card .weapon-name{
+    font-size:11px;
+    color:var(--ink-dim);
+    margin-top:3px;
+  }
+
+  .roll-count{
+    text-align:center;
+    margin-top:14px;
+    font-size:12.5px;
+    color:var(--ink-dim);
+  }
+  .roll-count b{color:var(--ink);}
+
+  .history{margin-top:26px;}
+  .history h2{
+    font-size:12px;
+    color:var(--ink-dim);
+    font-weight:700;
+    margin:0 0 10px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .history h2 .label-left{display:flex;align-items:center;gap:8px;}
+  .history h2 .dash{width:16px;height:2px;background:var(--line);}
+  .reset-btn{
+    border:none;
+    background:transparent;
+    color:var(--ink-dim);
+    font-family:'Noto Sans KR', sans-serif;
+    font-size:11.5px;
+    font-weight:700;
+    cursor:pointer;
+    padding:4px 8px;
+    border:1px solid var(--line);
+    transition:color .12s ease, border-color .12s ease;
+  }
+  .reset-btn:hover{color:var(--red);border-color:var(--red);}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    font-size:12.5px;
+    padding:7px 11px;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-left:3px solid var(--line);
+    color:var(--ink-dim);
+    clip-path:polygon(0 0,100% 0,100% 100%,6px 100%,0 calc(100% - 6px));
+  }
+  .chip b{color:var(--ink);font-weight:700;margin-right:2px;}
+
+  footer{margin-top:30px;text-align:center;font-size:11.5px;color:var(--ink-dim);opacity:.7;}
+
+  .yt-link{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-top:18px;
+    padding:12px 16px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid #FF0000;
+    color:var(--ink);
+    text-decoration:none;
+    font-weight:700;
+    font-size:13.5px;
+    clip-path:polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    transition:transform .12s ease, background .12s ease;
+  }
+  .yt-link:hover{transform:translateY(-2px);background:var(--bg-2);}
+  .yt-link svg{flex-shrink:0;}
+
+  @media (max-width:420px){
+    h1{font-size:32px;}
+    .card .name{font-size:34px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="eyebrow-line"><span class="dash"></span><span>VALORANT AGENT PICKER</span></div>
+    <h1>발랜뽑</h1>
+    <p>원하는 카테고리를 누르면 그 안에서 무작위로 요원 또는 맵 하나를 뽑아줍니다.</p>
+  </header>
+
+  <p class="section-label"><span class="dash"></span>요원 뽑기</p>
+  <div class="roles">
+    <button class="role-btn all" data-kind="agent" data-role="all"><span class="r-label">전체 29명</span>모든요원</button>
+    <button class="role-btn initiator" data-kind="agent" data-role="initiator"><span class="r-label">정보 · 교란</span>척후</button>
+    <button class="role-btn duelist" data-kind="agent" data-role="duelist"><span class="r-label">진입 · 전투</span>타격</button>
+    <button class="role-btn sentinel" data-kind="agent" data-role="sentinel"><span class="r-label">수비 · 감지</span>감시</button>
+    <button class="role-btn controller" data-kind="agent" data-role="controller"><span class="r-label">시야 차단</span>연막</button>
+  </div>
+
+  <p class="section-label"><span class="dash"></span>맵 뽑기</p>
+  <div class="maps">
+    <button class="role-btn mapun" data-kind="map" data-role="unrated"><span class="r-label">전체 13개</span>일반전 맵</button>
+    <button class="role-btn mapcomp" data-kind="map" data-role="competitive"><span class="r-label">현재 7개</span>경쟁전 맵</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="stage-empty" id="stageEmpty">
+      <b>대기 중</b>
+      위 버튼 중 하나를 눌러 뽑기를 시작하세요.
+    </div>
+    <div class="card" id="card">
+      <img class="card-img" id="cardImg" alt="" style="display:none;">
+      <span class="tag" id="cardTag"></span>
+      <p class="name" id="cardName"></p>
+      <p class="role-name" id="cardRole"></p>
+    </div>
+  </div>
+
+  <p class="roll-count" id="rollCount"></p>
+  <p style="text-align:center;margin:14px 0 0;">
+    <button class="reset-btn" id="resetBtnTop">기록 초기화</button>
+  </p>
+
+  <p class="section-label" style="margin-top:26px;"><span class="dash"></span>상점 예상</p>
+  <div class="roles">
+    <button class="role-btn shop" id="shopBtn"><span class="r-label">오늘 뜰 것 같은</span>상점 스킨 4개 뽑기</button>
+  </div>
+  <div class="shop-stage" id="shopStage">
+    <div class="shop-empty" id="shopEmpty">
+      <b>대기 중</b>
+      버튼을 누르면 무작위 스킨 4개를 상점처럼 보여줍니다.
+    </div>
+    <div class="shop-grid" id="shopGrid" style="display:none;"></div>
+  </div>
+
+  <div class="history">
+    <h2>
+      <span class="label-left"><span class="dash"></span>최근 기록</span>
+    </h2>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <a class="yt-link" href="https://youtube.com/channel/UC-rIFmgRVqvlunpdHyY-IHQ?si=5L5CsTXYcKztiA6d" target="_blank" rel="noopener noreferrer">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12Z"/></svg>
+    구독 좀 눌러주세요 🙏
+  </a>
+
+  <footer>중복 요원이 다시 나올 수 있는 단순 무작위 뽑기입니다.</footer>
+</div>
+
+<script>
+const AGENTS = {
+  duelist:   { label:'타격',  color:'--red',    list:['제트','피닉스','레이나','레이즈','요루','네온','아이소','웨이레이'] },
+  initiator: { label:'척후',  color:'--gold',   list:['소바','페이드','브리치','스카이','케이/오','게코','테호'] },
+  controller:{ label:'연막',  color:'--violet', list:['브림스톤','오멘','바이퍼','아스트라','하버','클로브','믹스'] },
+  sentinel:  { label:'감시',  color:'--teal',   list:['세이지','사이퍼','킬조이','체임버','데드록','바이스','비토'] },
+};
+
+const ALL_LIST = Object.entries(AGENTS).flatMap(([key,v]) => v.list.map(name => ({name, roleKey:key})));
+
+const MAPS = {
+  competitive: {
+    label:'경쟁전', color:'--ember', suffix:' 맵 · 경쟁전',
+    list:['어비스','어센트','헤이븐','로터스','스플릿','서밋','선셋']
+  },
+  unrated: {
+    label:'일반전', color:'--steel', suffix:' 맵 · 일반전',
+    // 경쟁전 7개 맵 + 현재 순환에서 빠진 맵 포함, 일반전/스위프트플레이 기준 전체 13개
+    list:['어비스','어센트','헤이븐','로터스','스플릿','서밋','선셋','바인드','아이스박스','브리즈','프랙처','펄','코로드']
+  }
+};
+
+let rollTotal = 0;
+const history = [];
+let SKIN_POOL = [];
+let skinLoadState = 'idle'; // idle | loading | ready | error
+const AGENT_ICONS = {};
+const MAP_ICONS = {};
+
+const shopBtn = document.getElementById('shopBtn');
+const shopEmpty = document.getElementById('shopEmpty');
+const shopGrid = document.getElementById('shopGrid');
+
+const stageEmpty = document.getElementById('stageEmpty');
+const card = document.getElementById('card');
+const cardImg = document.getElementById('cardImg');
+const cardTag = document.getElementById('cardTag');
+const cardName = document.getElementById('cardName');
+const cardRole = document.getElementById('cardRole');
+const rollCountEl = document.getElementById('rollCount');
+const chipsEl = document.getElementById('chips');
+
+function pickAgent(roleFilter){
+  const pool = roleFilter === 'all'
+    ? ALL_LIST
+    : AGENTS[roleFilter].list.map(name => ({name, roleKey:roleFilter}));
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+  const info = AGENTS[picked.roleKey];
+  return {
+    name: picked.name,
+    tagText: info.label,
+    subText: info.label + ' 요원',
+    colorVar: info.color,
+    chipLabel: info.label,
+    icon: AGENT_ICONS[picked.name] || null
+  };
+}
+
+function pickMap(poolKey){
+  const info = MAPS[poolKey];
+  const name = info.list[Math.floor(Math.random() * info.list.length)];
+  return {
+    name,
+    tagText: info.label,
+    subText: name + info.suffix,
+    colorVar: info.color,
+    chipLabel: info.label,
+    icon: MAP_ICONS[name] || null
+  };
+}
+
+function reveal(pick){
+  const colorVar = getComputedStyle(document.documentElement).getPropertyValue(pick.colorVar).trim();
+
+  card.classList.remove('show');
+  void card.offsetWidth; // restart animation
+  stageEmpty.style.display = 'none';
+
+  if(pick.icon){
+    cardImg.src = pick.icon;
+    cardImg.alt = pick.name;
+    cardImg.style.display = 'block';
+    cardImg.onerror = () => { cardImg.style.display = 'none'; };
+  } else {
+    cardImg.removeAttribute('src');
+    cardImg.style.display = 'none';
+  }
+
+  cardTag.textContent = pick.tagText;
+  cardTag.style.background = colorVar;
+  cardName.textContent = pick.name;
+  cardName.style.color = colorVar;
+  cardRole.textContent = pick.subText;
+
+  card.classList.add('show');
+
+  rollTotal++;
+  rollCountEl.innerHTML = '총 <b>' + rollTotal + '</b>번 뽑음';
+
+  history.unshift({ name: pick.name, label: pick.chipLabel });
+  if(history.length > 10) history.pop();
+  renderHistory();
+}
+
+function renderHistory(){
+  chipsEl.innerHTML = history.map(h =>
+    '<span class="chip"><b>' + h.name + '</b>' + h.label + '</span>'
+  ).join('');
+}
+
+function resetHistory(){
+  history.length = 0;
+  rollTotal = 0;
+  rollCountEl.textContent = '';
+  card.classList.remove('show');
+  stageEmpty.style.display = 'block';
+  renderHistory();
+}
+
+async function loadPickerIcons(){
+  try{
+    const [agentsRes, mapsRes] = await Promise.all([
+      fetch('https://valorant-api.com/v1/agents?language=ko-KR&isPlayableCharacter=true'),
+      fetch('https://valorant-api.com/v1/maps?language=ko-KR')
+    ]);
+    if(agentsRes.ok){
+      const aJson = await agentsRes.json();
+      (aJson.data || []).forEach(a => {
+        if(a.displayName && a.displayIcon) AGENT_ICONS[a.displayName] = a.displayIcon;
+      });
+    }
+    if(mapsRes.ok){
+      const mJson = await mapsRes.json();
+      (mJson.data || []).forEach(m => {
+        const icon = m.listViewIcon || m.displayIcon;
+        if(m.displayName && icon) MAP_ICONS[m.displayName] = icon;
+      });
+    }
+  } catch(err){
+    // 이미지 없이도 뽑기 자체는 정상 동작하므로 조용히 무시
+    console.error('요원/맵 이미지 로딩 실패:', err);
+  }
+}
+
+async function loadSkinPool(){
+  skinLoadState = 'loading';
+  shopBtn.innerHTML = '<span class="r-label">잠시만요</span>불러오는 중...';
+  shopBtn.disabled = true;
+  shopGrid.style.display = 'none';
+  shopEmpty.style.display = 'block';
+  shopEmpty.innerHTML = '<b>불러오는 중</b>스킨 정보를 가져오고 있어요...';
+
+  let errDetail = '';
+  try{
+    let skinsRes, tiersRes;
+    try{
+      [skinsRes, tiersRes] = await Promise.all([
+        fetch('https://valorant-api.com/v1/weapons/skins?language=ko-KR'),
+        fetch('https://valorant-api.com/v1/contenttiers?language=ko-KR')
+      ]);
+    } catch(networkErr){
+      throw new Error('네트워크 요청 자체가 실패했어요 (' + networkErr.message + '). CORS 차단이거나 접속이 막혔을 수 있어요.');
+    }
+    if(!skinsRes.ok){
+      throw new Error('서버가 오류를 반환했어요 (HTTP ' + skinsRes.status + ')');
+    }
+
+    let skinsJson, tiersJson;
+    try{
+      skinsJson = await skinsRes.json();
+      tiersJson = tiersRes.ok ? await tiersRes.json() : { data: [] };
+    } catch(parseErr){
+      throw new Error('응답을 JSON으로 해석하지 못했어요 (' + parseErr.message + ')');
+    }
+
+    const items = skinsJson && skinsJson.data;
+    if(!Array.isArray(items)){
+      throw new Error('응답 형식이 예상과 달라요 (data 배열 없음)');
+    }
+
+    // 한정판(독점) 등급 uuid 찾기 - 상점에 절대 노출되지 않는 등급이라 뽑기 풀에서 제외
+    const tiers = (tiersJson && tiersJson.data) || [];
+    const exclusiveTier = tiers.find(t => t.displayName && t.displayName.includes('독점'));
+    const exclusiveUuid = exclusiveTier ? exclusiveTier.uuid : null;
+
+    // 스킨이 진짜 아이콘으로 쓸만한 이미지를 뽑아주는 헬퍼 (본체 아이콘이 없으면 크로마 대표 이미지로 대체)
+    function pickIcon(item){
+      if(item.displayIcon) return item.displayIcon;
+      const chroma = item.chromas && item.chromas[0];
+      if(chroma) return chroma.displayIcon || chroma.fullRender || chroma.swatch || null;
+      return null;
+    }
+
+    const seen = new Set();
+    SKIN_POOL = items
+      // 기본 무기(스킨 없음, contentTierUuid가 null)와 한정판(독점) 등급 제외
+      .filter(item => item && item.displayName && item.contentTierUuid && item.contentTierUuid !== exclusiveUuid)
+      .map(item => ({ name: item.displayName, icon: pickIcon(item) }))
+      .filter(item => item.icon)
+      .filter(item => {
+        if(seen.has(item.name)) return false;
+        seen.add(item.name);
+        return true;
+      });
+
+    if(!SKIN_POOL.length){
+      throw new Error('스킨 데이터를 받았지만 사용할 수 있는 항목이 0개였어요 (총 ' + items.length + '개 수신)');
+    }
+
+    skinLoadState = 'ready';
+  } catch(err){
+    errDetail = err && err.message ? err.message : String(err);
+    console.error('상점 스킨 로딩 실패:', err);
+    skinLoadState = 'error';
+  }
+  restoreShopButton(errDetail);
+}
+
+function restoreShopButton(errDetail){
+  shopBtn.disabled = false;
+  if(skinLoadState === 'error'){
+    shopBtn.innerHTML = '<span class="r-label">불러오기 실패</span>다시 시도';
+    shopGrid.style.display = 'none';
+    shopEmpty.style.display = 'block';
+    shopEmpty.innerHTML = '<b>불러오기 실패</b>' +
+      (errDetail ? '오류 내용: ' + errDetail : '스킨 정보를 가져오지 못했어요.') +
+      '<br>버튼을 다시 눌러보세요.';
+  } else {
+    shopBtn.innerHTML = '<span class="r-label">오늘 뜰 것 같은</span>상점 스킨 4개 뽑기';
+    shopGrid.style.display = 'none';
+    shopEmpty.style.display = 'block';
+    shopEmpty.innerHTML = '<b>준비 완료</b>버튼을 눌러 스킨 4개를 뽑아보세요.';
+  }
+}
+
+function pickShopSkins(){
+  const pool = SKIN_POOL.slice();
+  const picked = [];
+  const count = Math.min(4, pool.length);
+  for(let i = 0; i < count; i++){
+    const idx = Math.floor(Math.random() * pool.length);
+    picked.push(pool.splice(idx, 1)[0]);
+  }
+  return picked;
+}
+
+function renderShop(skins){
+  shopEmpty.style.display = 'none';
+  shopGrid.style.display = 'grid';
+  shopGrid.innerHTML = skins.map(s => `
+    <div class="shop-card">
+      <img src="${s.icon}" alt="${s.name}" loading="lazy" onerror="this.style.display='none';">
+      <span class="skin-name">${s.name}</span>
+    </div>
+  `).join('');
+}
+
+shopBtn.addEventListener('click', async () => {
+  if(skinLoadState === 'loading') return;
+  if(skinLoadState !== 'ready'){
+    await loadSkinPool();
+    if(skinLoadState !== 'ready') return;
+  }
+  renderShop(pickShopSkins());
+});
+
+
+
+document.querySelectorAll('.role-btn').forEach(btn => {
+  if(btn.id === 'shopBtn') return;
+  btn.addEventListener('click', () => {
+    const pick = btn.dataset.kind === 'map'
+      ? pickMap(btn.dataset.role)
+      : pickAgent(btn.dataset.role);
+    reveal(pick);
+  });
+});
+
+document.getElementById('resetBtnTop').addEventListener('click', resetHistory);
+
+loadSkinPool();
+loadPickerIcons();
+</script>
+</body>
+</html>
